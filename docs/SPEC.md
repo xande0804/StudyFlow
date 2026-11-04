@@ -7,7 +7,7 @@ Aplicativo mobile (Android/iOS) de organização de estudos: matérias, tarefas,
 
 ## Autenticação
 - Nome opcional, e-mail e senha obrigatórios (mínimo de 6 caracteres, com confirmação).
-- Login imediato após cadastro, persistência de sessão, recuperação de senha por e-mail e logout.
+- Login imediato após cadastro, persistência de sessão e logout.
 - Sem verificação obrigatória de e-mail e sem exclusão de conta na versão inicial.
 - Cada aluno acessa apenas seus próprios registros, por regras de segurança do Firebase.
 
@@ -67,7 +67,7 @@ Aplicativo mobile (Android/iOS) de organização de estudos: matérias, tarefas,
 - Demonstração em emulador/dispositivo por vídeo de 3 a 5 minutos ou apresentação técnica.
 
 ## Aceitação
-- Cadastro/login/logout/recuperação funcionam; isolamento entre contas é efetivo.
+- Cadastro/login/logout funcionam; isolamento entre contas é efetivo.
 - Matérias, tarefas e provas obedecem todas as validações, vínculos e regras de exclusão.
 - Atrasos, dashboard e histórico exibem dados corretos e reabrem registros.
 - Notificações futuras podem ser programadas, reagendadas e canceladas conforme permissões e estado do dispositivo.
