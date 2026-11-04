@@ -2,12 +2,12 @@ import { Redirect } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Button, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../firebaseConnection';
 import { useSession } from '../session';
 
-type Mode = 'login' | 'register' | 'reset';
-const titles = { login: 'Entrar', register: 'Criar conta', reset: 'Recuperar senha' };
+type Mode = 'login' | 'register';
+const titles = { login: 'Entrar', register: 'Criar conta' };
 
 export default function Home() {
   const { user, loading } = useSession();
@@ -48,12 +48,7 @@ export default function Home() {
           }
         }
       }
-      if (mode === 'reset') {
-        await sendPasswordResetEmail(auth, email);
-        setMessage('Confira sua caixa de entrada se houver uma conta com este e-mail.');
-      } else {
-        setForm({ name: '', email: '', password: '', confirmation: '' });
-      }
+      setForm({ name: '', email: '', password: '', confirmation: '' });
     } catch (error) {
       if (__DEV__) console.warn('StudyFlow Auth:', (error as { code?: string }).code);
       setMessage('Não foi possível concluir. Confira os dados e a conexão e tente novamente.');
@@ -96,13 +91,12 @@ export default function Home() {
               <Text style={styles.text}>{titles[mode]}</Text>
               {mode === 'register' && field('name', 'Nome (opcional)')}
               {field('email', 'E-mail')}
-              {mode !== 'reset' && field('password', 'Senha')}
+              {field('password', 'Senha')}
               {mode === 'register' && field('confirmation', 'Confirme a senha')}
               <Button title={titles[mode]} disabled={busy} onPress={submit} />
               {mode === 'login' ? (
                 <>
                   <Button title="Criar conta" disabled={busy} onPress={() => changeMode('register')} />
-                  <Button title="Esqueci minha senha" disabled={busy} onPress={() => changeMode('reset')} />
                 </>
               ) : <Button title="Voltar para o login" disabled={busy} onPress={() => changeMode('login')} />}
             </>
