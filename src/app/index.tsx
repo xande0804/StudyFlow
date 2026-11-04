@@ -82,7 +82,7 @@ export default function Home() {
     );
   }
 
-  if (user && !busy) return <Redirect href="/materias" />;
+  if (user && !busy) return <Redirect href="/painel" />;
 
   return (
     <SafeAreaView style={styles.screen}>
