@@ -49,9 +49,15 @@ export async function saveActivity(uid: string, activity: Activity) {
   const { db, items, subjects } = refs(uid);
   const item = id ? doc(items, id) : doc(items);
   await runTransaction(db, async (transaction) => {
-    if (id && !(await transaction.get(item)).exists()) throw new Error('Atividade removida.');
-    if (!(await transaction.get(doc(subjects, data.subjectId))).exists()) throw new Error('A matéria foi removida.');
-    transaction.set(item, { ...data, title, done: id ? data.done : false });
+    const previous = id ? await transaction.get(item) : undefined;
+    if (previous && !previous.exists()) throw new Error('Atividade removida.');
+    const subjectRef = doc(subjects, data.subjectId);
+    const subject = await transaction.get(subjectRef);
+    if (!subject.exists()) throw new Error('A matéria foi removida.');
+    if (previous?.data()?.subjectId !== data.subjectId) {
+      transaction.update(subjectRef, { linkVersion: (subject.data().linkVersion ?? 0) + 1 });
+    }
+    transaction.set(item, { ...data, title, done: previous?.data()?.done ?? false });
   });
 }
 

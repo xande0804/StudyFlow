@@ -1,4 +1,4 @@
-import { collection, doc, getFirestore, onSnapshot, runTransaction } from 'firebase/firestore';
+import { collection, doc, getDocsFromServer, getFirestore, limit, onSnapshot, query, runTransaction, where } from 'firebase/firestore';
 import { app } from './firebaseConnection';
 
 export type Subject = { id: string; name: string; teacher: string; color: string; nameKey: string };
@@ -45,6 +45,19 @@ export async function saveSubject(uid: string, values: Pick<Subject, 'name' | 't
       transaction.delete(doc(db, 'users', uid, 'subjectNames', previousKey));
     }
     if (!reservation.exists()) transaction.set(nameRef, { subjectId: subject.id });
-    transaction.set(subject, { name, teacher, color: values.color, nameKey });
+    transaction.set(subject, { name, teacher, color: values.color, nameKey, linkVersion: previous?.data()?.linkVersion ?? 0 });
+  });
+}
+
+export async function deleteSubject(uid: string, id: string) {
+  const db = database();
+  const subject = doc(db, 'users', uid, 'subjects', id);
+  const linked = query(collection(db, 'users', uid, 'activities'), where('subjectId', '==', id), limit(1));
+  await runTransaction(db, async (transaction) => {
+    const current = await transaction.get(subject);
+    if (!current.exists()) throw new Error('Esta matéria já foi removida.');
+    if (!(await getDocsFromServer(linked)).empty) throw new Error('Esta matéria tem atividades vinculadas, incluindo o histórico.');
+    transaction.delete(subject);
+    transaction.delete(doc(db, 'users', uid, 'subjectNames', current.data().nameKey));
   });
 }

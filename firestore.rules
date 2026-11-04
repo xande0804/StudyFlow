@@ -8,10 +8,11 @@ service cloud.firestore {
 
     function validSubject(uid, subjectId) {
       let data = request.resource.data;
-      return data.keys().hasOnly(['name', 'teacher', 'color', 'nameKey'])
+      return data.keys().hasOnly(['name', 'teacher', 'color', 'nameKey', 'linkVersion'])
         && data.name is string && data.name.size() > 0 && data.name.size() <= 60
         && data.teacher is string && data.teacher.size() <= 80
         && data.color in ['#818cf8', '#2dd4bf', '#fb7185', '#fbbf24']
+        && data.get('linkVersion', 0) is int && data.get('linkVersion', 0) >= 0
         && data.nameKey is string && data.nameKey.size() > 0 && data.nameKey.size() <= 900
         && getAfter(/databases/$(database)/documents/users/$(uid)/subjectNames/$(data.nameKey)).data.subjectId == subjectId;
     }
@@ -37,14 +38,22 @@ service cloud.firestore {
         && existsAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(data.subjectId));
     }
 
+    function bumpsSubjectLink(uid, subjectId) {
+      let path = /databases/$(database)/documents/users/$(uid)/subjects/$(subjectId);
+      return getAfter(path).data.get('linkVersion', 0) == get(path).data.get('linkVersion', 0) + 1;
+    }
+
     match /users/{uid}/activities/{activityId} {
       allow read, delete: if owns(uid);
-      allow create: if owns(uid) && validActivity(uid) && request.resource.data.done == false;
-      allow update: if owns(uid) && validActivity(uid);
+      allow create: if owns(uid) && validActivity(uid) && request.resource.data.done == false
+        && bumpsSubjectLink(uid, request.resource.data.subjectId);
+      allow update: if owns(uid) && validActivity(uid)
+        && (resource.data.subjectId == request.resource.data.subjectId || bumpsSubjectLink(uid, request.resource.data.subjectId));
     }
 
     match /users/{uid}/subjects/{subjectId} {
       allow read: if owns(uid);
+      allow delete: if owns(uid) && !existsAfter(/databases/$(database)/documents/users/$(uid)/subjectNames/$(resource.data.nameKey));
       allow create: if owns(uid) && validSubject(uid, subjectId);
       allow update: if owns(uid) && validSubject(uid, subjectId)
         && (resource.data.nameKey == request.resource.data.nameKey
@@ -55,7 +64,8 @@ service cloud.firestore {
       allow get: if owns(uid);
       allow create: if owns(uid) && validName(uid, nameKey);
       allow delete: if owns(uid)
-        && getAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(resource.data.subjectId)).data.nameKey != nameKey;
+        && (!existsAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(resource.data.subjectId))
+          || getAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(resource.data.subjectId)).data.nameKey != nameKey);
     }
   }
 }

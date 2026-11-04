@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { saveSubject, subjectColors, watchSubjects, type Subject } from './subjects';
+import { deleteSubject, saveSubject, subjectColors, watchSubjects, type Subject } from './subjects';
 
 const empty = { name: '', teacher: '', color: subjectColors[0] };
 const colorNames = ['Lilás', 'Verde', 'Rosa', 'Amarelo'];
@@ -13,6 +13,7 @@ export function SubjectsPanel({ uid }: { uid: string }) {
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => watchSubjects(uid, (items) => {
     setSubjects(items);
@@ -22,6 +23,7 @@ export function SubjectsPanel({ uid }: { uid: string }) {
   function reset() {
     setForm(empty);
     setEditing(undefined);
+    setConfirming(false);
     setMessage('');
   }
 
@@ -36,6 +38,23 @@ export function SubjectsPanel({ uid }: { uid: string }) {
     } catch (error) {
       const detail = error instanceof Error && !('code' in error) ? error.message : 'Falha ao salvar. Tente novamente.';
       setMessage(detail);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove() {
+    if (!editing || saving) return;
+    setSaving(true);
+    setMessage('');
+    try {
+      await deleteSubject(uid, editing);
+      reset();
+      setOpen(false);
+      setMessage('Matéria excluída.');
+    } catch (error) {
+      setConfirming(false);
+      setMessage(error instanceof Error && !('code' in error) ? error.message : 'Não foi possível excluir. Tente novamente.');
     } finally {
       setSaving(false);
     }
@@ -63,6 +82,13 @@ export function SubjectsPanel({ uid }: { uid: string }) {
                 ))}
               </View>
               <Button title={saving ? 'Salvando…' : 'Salvar matéria'} disabled={saving || Boolean(availability)} onPress={save} />
+              {editing && (confirming ? (
+                <>
+                  <Text style={styles.text}>Excluir esta matéria definitivamente?</Text>
+                  <Button title="Confirmar exclusão da matéria" disabled={saving} onPress={remove} />
+                  <Button title="Voltar à edição" disabled={saving} onPress={() => setConfirming(false)} />
+                </>
+              ) : <Button title="Excluir matéria" disabled={saving || Boolean(availability)} onPress={() => setConfirming(true)} />)}
               <Button title="Cancelar" disabled={saving} onPress={() => setOpen(false)} />
               {!!message && <Text accessibilityLiveRegion="polite" style={styles.text}>{message}</Text>}
             </View>
@@ -76,6 +102,7 @@ export function SubjectsPanel({ uid }: { uid: string }) {
         <Pressable key={subject.id} accessibilityRole="button" accessibilityLabel={`Editar ${subject.name}`} disabled={saving}
           style={[styles.input, { borderLeftColor: subject.color, borderLeftWidth: 5 }]}
           onPress={() => {
+            setConfirming(false);
             setOpen(true);
             setEditing(subject.id);
             setForm({ name: subject.name, teacher: subject.teacher, color: subject.color });
