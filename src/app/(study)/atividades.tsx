@@ -12,6 +12,9 @@ const reminders = [
   { value: 'off', label: 'Desativado' },
 ] as const;
 const filters = [{ value: 'all', label: 'Tudo' }, { value: 'task', label: 'Tarefas' }, { value: 'exam', label: 'Provas' }] as const;
+const displayClock = (date: Date) => date.toLocaleString('pt-BR', {
+  dateStyle: 'short', timeStyle: 'short', hourCycle: 'h23',
+});
 const formatDate = (date: string) => date.split('-').reverse().join('/');
 function formatScheduleInput(field: 'date' | 'time', input: string) {
   const digits = input.replace(/\D/g, '').slice(0, field === 'date' ? 8 : 4);
@@ -80,7 +83,7 @@ function Activities({ uid }: { uid: string }) {
   const online = Boolean(items && subjects);
   const draft = { ...form, date: form.date.split('/').reverse().join('-') };
   const remindAt = reminderTime(draft);
-  const reminderPassed = !form.done && remindAt !== null && remindAt <= Date.now();
+  const reminderPassed = remindAt !== null && remindAt <= Date.now();
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Button title="Nova atividade" disabled={!online || !subjects?.length} onPress={() => openForm()} />
@@ -126,7 +129,11 @@ function Activities({ uid }: { uid: string }) {
                     onPress={() => setForm({ ...form, reminder: value })} />
                 ))}
               </View>
-              {reminderPassed && <Text style={styles.text}>O horário desse lembrete já passou.</Text>}
+              {!form.done && remindAt !== null && Number.isFinite(remindAt) && (
+                <Text style={styles.text}>
+                  {reminderPassed ? 'O horário desse lembrete já passou.' : 'Aviso previsto para ' + displayClock(new Date(remindAt)) + '.'}
+                </Text>
+              )}
               <Button title="Salvar atividade" disabled={busy || !online || !subjects?.length}
                 onPress={() => perform(() => saveActivity(uid, draft), () => { setFormOpen(false); setForm(empty); setMessage('Atividade salva.'); })} />
               <Button title="Cancelar" disabled={busy} onPress={() => setFormOpen(false)} />
