@@ -18,6 +18,7 @@ export default function StudyLayout() {
       <Tabs.Screen name="painel" options={{ title: 'Painel' }} />
       <Tabs.Screen name="materias" options={{ title: 'Matérias' }} />
       <Tabs.Screen name="atividades" options={{ title: 'Atividades' }} />
+      <Tabs.Screen name="pomodoro" options={{ title: 'Pomodoro' }} />
       <Tabs.Screen name="conta" options={{ title: 'Conta' }} />
     </Tabs>
   );
