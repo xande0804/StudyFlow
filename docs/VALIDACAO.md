@@ -17,3 +17,11 @@ Execute em Android e iOS. Para sincronização, use dois dispositivos conectados
 
 - [ ] Confira a postagem da proposta com nome completo dos integrantes, nome do app, problema, público-alvo, funcionalidades e link do repositório.
 - [ ] Na tarefa final, inclua o link do repositório público ou com acesso liberado ao professor. O PDF deixa as datas em aberto. Confira os prazos no Classroom.
+
+## Evidências da entrega
+
+O padrão adotado nas entregas do Gerenciador de Despesas 2.0 e do CampusGo será aplicado ao StudyFlow. Salve capturas reais com nomes descritivos em `prints/` e confira os links no README e na descrição do PR. Mostre pelo menos o fluxo principal, um formulário inválido, o tratamento da permissão de notificações e a recuperação após perda de conexão. Identifique a plataforma usada para cada evidência e registre os casos ainda pendentes. Inclua identificação acadêmica, divisão de tarefas e passos de instalação no README.
+
+## Referência da disciplina para Firebase
+
+Use o SDK JavaScript modular do Firebase com o Expo e centralize a inicialização em `src/firebaseConnection.ts`. Compartilhe a sessão via Context acima da navegação. Use `onSnapshot` com limpeza da inscrição ao sair da conta, mapeie documentos antes de exibi-los e aguarde a confirmação das gravações antes de fechar o formulário. Para o StudyFlow, use o UID autenticado e regras por usuário. O UID fixo do exemplo de despesas é um recurso didático. O Expo mantém a configuração padrão do Metro.
