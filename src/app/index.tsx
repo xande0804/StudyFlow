@@ -27,7 +27,7 @@ export default function Home() {
     if (!auth || busy) return;
     const email = form.email.trim();
     const invalid: Partial<typeof form> = {};
-    if (!/^\S+@\S+\.\S+$/.test(email)) invalid.email = 'Informe um e-mail válido.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) invalid.email = 'Informe um e-mail válido.';
     if (mode === 'login' && !form.password) invalid.password = 'Informe sua senha.';
     if (mode === 'register' && form.password.length < 6) invalid.password = 'Use pelo menos 6 caracteres.';
     if (mode === 'register' && form.confirmation !== form.password) invalid.confirmation = 'As senhas devem ser iguais.';
@@ -53,7 +53,8 @@ export default function Home() {
       } else {
         setForm({ name: '', email: '', password: '', confirmation: '' });
       }
-    } catch {
+    } catch (error) {
+      if (__DEV__) console.warn('StudyFlow Auth:', (error as { code?: string }).code);
       setMessage('Não foi possível concluir. Confira os dados e a conexão e tente novamente.');
     } finally {
       setBusy(false);
