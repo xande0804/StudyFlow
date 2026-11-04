@@ -4,7 +4,7 @@ Execute em Android e iOS. Para sincronização, use dois dispositivos conectados
 
 - [ ] Interface escura e legível com teclado aberto e em tela pequena. Componentes reaproveitados, layout Flexbox, ícones identificáveis e feedback de carregamento, vazio e erro.
 - [ ] Navegue entre abas e telas secundárias. Volte sem perder o estado esperado. Confira campos locais e sessão global compartilhada.
-- [ ] Cadastre com e sem nome. Rejeite e-mail inválido, senha curta e confirmação divergente. Confira login imediato, persistência após reinício, recuperação por e-mail e saída.
+- [ ] Cadastre com e sem nome. Rejeite e-mail inválido, senha curta e confirmação divergente. Confira login imediato, persistência após reinício e saída.
 - [ ] Crie, edite e exclua matérias. Confira os limites de nome e professor e a cor. Tente duplicar nomes com variações de espaços, acentos e caixa.
 - [ ] Crie e edite tarefas e provas com títulos repetidos e prazos passados. Confira campos obrigatórios, limites e confirmação de exclusão. Transfira registros entre matérias. Tente excluir matéria vinculada inclusive a registros históricos.
 - [ ] Confira filtros, histórico, conclusão manual e reabertura. Teste o atraso após o horário marcado e à meia-noite para data sem horário. Compare a ordem do dashboard e os limites da janela de sete dias.
@@ -25,3 +25,9 @@ O padrão adotado nas entregas do Gerenciador de Despesas 2.0 e do CampusGo ser�
 ## Referência da disciplina para Firebase
 
 Use o SDK JavaScript modular do Firebase com o Expo e centralize a inicialização em `src/firebaseConnection.ts`. Compartilhe a sessão via Context acima da navegação. Use `onSnapshot` com limpeza da inscrição ao sair da conta, mapeie documentos antes de exibi-los e aguarde a confirmação das gravações antes de fechar o formulário. Para o StudyFlow, use o UID autenticado e regras por usuário. O UID fixo do exemplo de despesas é um recurso didático. O Expo mantém a configuração padrão do Metro.
+
+## Validação no Android
+
+- Pomodoro em segundo plano: no emulador Android 16 com a build de desenvolvimento, foi iniciada uma sessão de foco de 1 minuto. Ao sair da tela do app, o aviso de conclusão apareceu na barra de notificações e tocou um som.
+- Para reproduzir, habilite notificações na aba Conta e permita Alarmes e lembretes para o StudyFlow nas configurações do Android. Inicie uma nova sessão depois de conceder a permissão.
+- Ainda faltam os testes de entrega de lembretes de tarefas e provas, cancelamento após pausa ou saída e vibração em aparelho físico.
