@@ -62,10 +62,12 @@ function Pomodoro({ uid }: { uid: string }) {
   const endsAt = timer?.endsAt;
   const mode = timer?.mode;
   const ready = Boolean(timer);
+  const completed = timer?.remaining === 0;
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || completed) return;
     const scope = 'pomodoro:' + uid;
     function refresh() {
+      if (endsAt && endsAt <= Date.now()) return;
       const desired = endsAt ? [{ id: scope, title: 'Sessão concluída',
         body: mode === 'focus' ? 'Seu tempo de foco terminou.' : 'Seu descanso terminou.', at: endsAt }] : [];
       reconcileNotices(scope, desired).catch((error) => console.warn('StudyFlow Pomodoro:', error));
@@ -74,7 +76,7 @@ function Pomodoro({ uid }: { uid: string }) {
     const subscription = AppState.addEventListener('change', (state) => { if (state === 'active') refresh(); });
     const permission = DeviceEventEmitter.addListener('studyflow-notice-permission', refresh);
     return () => { subscription.remove(); permission.remove(); };
-  }, [endsAt, mode, ready, uid]);
+  }, [completed, endsAt, mode, ready, uid]);
   useEffect(() => {
     if (!endsAt || now < endsAt) return;
     setTimer((current) => current?.endsAt === endsAt ? { ...current, endsAt: null, remaining: 0 } : current);
