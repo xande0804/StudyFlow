@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Button, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { changeActivity, saveActivity, watchActivities, type Activity } from '../../activities';
+import { changeActivity, reminderTime, saveActivity, watchActivities, type Activity } from '../../activities';
 import { useSession } from '../../session';
 import { watchSubjects, type Subject } from '../../subjects';
 
-const empty: Activity = { id: '', kind: 'task', title: '', subjectId: '', date: '', time: '', description: '', done: false };
+const empty: Activity = { id: '', kind: 'task', title: '', subjectId: '', date: '', time: '', description: '', done: false, reminder: 'oneDay' };
+const reminders = [
+  { value: 'threeDays', label: '3 dias antes' },
+  { value: 'oneDay', label: '1 dia antes' },
+  { value: 'oneHour', label: '1 hora antes' },
+  { value: 'off', label: 'Desativado' },
+] as const;
 const filters = [{ value: 'all', label: 'Tudo' }, { value: 'task', label: 'Tarefas' }, { value: 'exam', label: 'Provas' }] as const;
 const formatDate = (date: string) => date.split('-').reverse().join('/');
 const fields = [
@@ -55,6 +61,9 @@ function Activities({ uid }: { uid: string }) {
 
   const visible = (items ?? []).filter((item) => filter === 'all' || filter === item.kind);
   const online = Boolean(items && subjects);
+  const draft = { ...form, date: form.date.split('/').reverse().join('-') };
+  const remindAt = reminderTime(draft);
+  const reminderPassed = !form.done && remindAt !== null && remindAt <= Date.now();
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Button title="Nova atividade" disabled={!online || !subjects?.length} onPress={() => openForm()} />
@@ -84,8 +93,16 @@ function Activities({ uid }: { uid: string }) {
                     onPress={() => setForm({ ...form, subjectId: subject.id })} />
                 ))}
               </View>
+              <Text style={styles.text}>Lembrete</Text>
+              <View style={styles.row}>
+                {reminders.map(({ value, label }) => (
+                  <Button key={value} title={label} disabled={busy || form.reminder === value}
+                    onPress={() => setForm({ ...form, reminder: value })} />
+                ))}
+              </View>
+              {reminderPassed && <Text style={styles.text}>O horário desse lembrete já passou.</Text>}
               <Button title="Salvar atividade" disabled={busy || !online || !subjects?.length}
-                onPress={() => perform(() => saveActivity(uid, { ...form, date: form.date.split('/').reverse().join('-') }), () => { setFormOpen(false); setForm(empty); setMessage('Atividade salva.'); })} />
+                onPress={() => perform(() => saveActivity(uid, draft), () => { setFormOpen(false); setForm(empty); setMessage('Atividade salva.'); })} />
               <Button title="Cancelar" disabled={busy} onPress={() => setFormOpen(false)} />
               {!!message && <Text accessibilityLiveRegion="polite" style={styles.text}>{message}</Text>}
             </View>
@@ -100,6 +117,7 @@ function Activities({ uid }: { uid: string }) {
               <Text style={styles.text}>{detail?.kind === 'exam' ? 'Prova' : 'Tarefa'} · {detail?.done ? 'Histórico' : 'Pendente'}</Text>
               <Text style={styles.text}>{subjects?.find((subject) => subject.id === detail?.subjectId)?.name}</Text>
               <Text style={styles.text}>{detail && formatDate(detail.date)} {detail?.time}</Text>
+              <Text style={styles.text}>Lembrete: {reminders.find((option) => option.value === detail?.reminder)?.label}</Text>
               {!!detail?.description && <Text style={styles.text}>{detail.description}</Text>}
               <Button title="Editar atividade" onPress={() => { if (detail) openForm(detail); }} />
               <Button title="Fechar detalhes" onPress={() => setDetailId('')} />

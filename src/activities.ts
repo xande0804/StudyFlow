@@ -1,9 +1,25 @@
 import { collection, doc, getFirestore, onSnapshot, runTransaction } from 'firebase/firestore';
 import { app } from './firebaseConnection';
 
+export type Reminder = 'threeDays' | 'oneDay' | 'oneHour' | 'off';
+
+export function reminderTime(activity: Pick<Activity, 'date' | 'time' | 'reminder'>) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(activity.date)) return null;
+  if (activity.reminder === 'off' || (!activity.time && activity.reminder === 'oneHour')) return null;
+  const [year, month, day] = activity.date.split('-').map(Number);
+  const [hour, minute] = activity.time ? activity.time.split(':').map(Number) : [9, 0];
+  const date = new Date(0);
+  date.setFullYear(year, month - 1, day);
+  date.setHours(hour, minute, 0, 0);
+  const days = activity.reminder === 'threeDays' ? 3 : 1;
+  if (activity.time) return date.getTime() - (activity.reminder === 'oneHour' ? 1 : days * 24) * 3600000;
+  date.setDate(date.getDate() - days);
+  return date.getTime();
+}
+
 export type Activity = {
   id: string; kind: 'task' | 'exam'; title: string; subjectId: string;
-  date: string; time: string; description: string; done: boolean;
+  date: string; time: string; description: string; done: boolean; reminder: Reminder;
 };
 
 function refs(uid: string) {
@@ -14,7 +30,7 @@ function refs(uid: string) {
 
 export function watchActivities(uid: string, receive: (items: Activity[] | null) => void) {
   return onSnapshot(refs(uid).items, { includeMetadataChanges: true }, (snapshot) => {
-    receive(snapshot.metadata.fromCache ? null : snapshot.docs.map((item) => ({ ...item.data(), id: item.id }) as Activity)
+    receive(snapshot.metadata.fromCache ? null : snapshot.docs.map((item) => ({ reminder: 'oneDay', ...item.data(), id: item.id }) as Activity)
       .sort((a, b) => (a.date + (a.time || '23:59')).localeCompare(b.date + (b.time || '23:59'))));
   }, () => receive(null));
 }
@@ -29,6 +45,7 @@ export async function saveActivity(uid: string, activity: Activity) {
     || data.description.length > 1000) {
     throw new Error('Confira o título, a matéria, a data e o horário.');
   }
+  if (data.reminder === 'oneHour' && !data.time) throw new Error('Informe o horário para lembrar uma hora antes.');
   const { db, items, subjects } = refs(uid);
   const item = id ? doc(items, id) : doc(items);
   await runTransaction(db, async (transaction) => {

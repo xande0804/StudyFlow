@@ -24,7 +24,7 @@ service cloud.firestore {
 
     function validActivity(uid) {
       let data = request.resource.data;
-      return data.keys().hasOnly(['kind', 'title', 'subjectId', 'date', 'time', 'description', 'done'])
+      return data.keys().hasOnly(['kind', 'title', 'subjectId', 'date', 'time', 'description', 'done', 'reminder'])
         && data.kind in ['task', 'exam']
         && data.title is string && data.title.size() > 0 && data.title.size() <= 120
         && data.subjectId is string && data.subjectId.matches('^[A-Za-z0-9]{20}$')
@@ -32,6 +32,8 @@ service cloud.firestore {
         && data.time is string && (data.time == '' || data.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'))
         && data.description is string && data.description.size() <= 1000
         && data.done is bool
+        && data.get('reminder', 'oneDay') in ['threeDays', 'oneDay', 'oneHour', 'off']
+        && (data.get('reminder', 'oneDay') != 'oneHour' || data.time != '')
         && existsAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(data.subjectId));
     }
 
