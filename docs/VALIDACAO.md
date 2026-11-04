@@ -30,6 +30,7 @@ Use o SDK JavaScript modular do Firebase com o Expo e centralize a inicializaç�
 
 - Pomodoro em segundo plano: no emulador Android 16 com a build de desenvolvimento, foi iniciada uma sessão de foco de 1 minuto. Ao sair da tela do app, o aviso de conclusão apareceu na barra de notificações e tocou um som.
 - Para reproduzir, habilite notificações na aba Conta e permita Alarmes e lembretes para o StudyFlow nas configurações do Android. Inicie uma nova sessão depois de conceder a permissão.
-- Ainda faltam os testes de entrega de lembretes de tarefas e provas, cancelamento após pausa ou saída e vibração em aparelho físico.
+- Ainda faltam os testes de entrega de lembretes de tarefas e provas, cancelamento ao concluir uma atividade e vibração em aparelho físico.
 
 - Lembrete de atividade no emulador Android 16: com a sessão ativa e o app em segundo plano, o aviso de uma hora antes foi entregue. Em novo teste com aviso futuro e logout antes do disparo, o aviso não apareceu após o horário previsto.
+- Pomodoro pausado no emulador Android 16: o aviso não tocou após a pausa, conforme confirmado no teste manual.
