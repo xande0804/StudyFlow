@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Subjects and their unique-name reservations live under the owner UID.
+    function owns(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function validSubject(uid, subjectId) {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['name', 'teacher', 'color', 'nameKey'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 60
+        && data.teacher is string && data.teacher.size() <= 80
+        && data.color in ['#818cf8', '#2dd4bf', '#fb7185', '#fbbf24']
+        && data.nameKey is string && data.nameKey.size() > 0 && data.nameKey.size() <= 900
+        && getAfter(/databases/$(database)/documents/users/$(uid)/subjectNames/$(data.nameKey)).data.subjectId == subjectId;
+    }
+
+    function validName(uid, nameKey) {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['subjectId']) && data.subjectId is string
+        && getAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(data.subjectId)).data.nameKey == nameKey;
+    }
+
+    match /users/{uid}/subjects/{subjectId} {
+      allow read: if owns(uid);
+      allow create: if owns(uid) && validSubject(uid, subjectId);
+      allow update: if owns(uid) && validSubject(uid, subjectId)
+        && (resource.data.nameKey == request.resource.data.nameKey
+          || !existsAfter(/databases/$(database)/documents/users/$(uid)/subjectNames/$(resource.data.nameKey)));
+    }
+
+    match /users/{uid}/subjectNames/{nameKey} {
+      allow get: if owns(uid);
+      allow create: if owns(uid) && validName(uid, nameKey);
+      allow delete: if owns(uid)
+        && getAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(resource.data.subjectId)).data.nameKey != nameKey;
+    }
+  }
+}

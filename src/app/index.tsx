@@ -1,7 +1,8 @@
+import { Redirect } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Button, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../firebaseConnection';
 import { useSession } from '../session';
 
@@ -61,20 +62,6 @@ export default function Home() {
     }
   }
 
-  async function logout() {
-    if (!auth || busy) return;
-    setBusy(true);
-    setMessage('');
-    try {
-      await signOut(auth);
-      changeMode('login');
-    } catch {
-      setMessage('Não foi possível sair. Tente novamente.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
   function field(key: keyof typeof form, label: string) {
     const secret = key === 'password' || key === 'confirmation';
     return (
@@ -95,6 +82,8 @@ export default function Home() {
     );
   }
 
+  if (user && !busy) return <Redirect href="/materias" />;
+
   return (
     <SafeAreaView style={styles.screen}>
       <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -102,11 +91,6 @@ export default function Home() {
           <Text accessibilityRole="header" style={styles.title}>StudyFlow</Text>
           {loading ? <ActivityIndicator /> : !auth ? (
             <Text style={styles.text}>Configure a conexão com o Firebase para continuar.</Text>
-          ) : user ? (
-            <>
-              <Text style={styles.text}>Sessão iniciada como {user.email}</Text>
-              <Button title="Sair" disabled={busy} onPress={logout} />
-            </>
           ) : (
             <>
               <Text style={styles.text}>{titles[mode]}</Text>
