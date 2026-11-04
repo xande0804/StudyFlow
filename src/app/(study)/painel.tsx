@@ -41,11 +41,12 @@ function Dashboard({ uid }: { uid: string }) {
   const end = localDate(lastDay);
   const pending = (items ?? []).filter((item) => !item.done).sort((a, b) => deadline(a) - deadline(b));
   const isLate = (item: Activity) => deadline(item) < now.getTime();
+  const upcoming = pending.filter((item) => !isLate(item));
   const sections = [
     { title: 'Atrasados', entries: pending.filter(isLate) },
-    { title: 'Tarefas de hoje', entries: pending.filter((item) => item.kind === 'task' && item.date === today) },
-    { title: 'Próximas provas', entries: pending.filter((item) => item.kind === 'exam' && !isLate(item)) },
-    { title: 'Próximos sete dias', entries: pending.filter((item) => item.date >= today && item.date <= end) },
+    { title: 'Tarefas de hoje', entries: upcoming.filter((item) => item.kind === 'task' && item.date === today) },
+    { title: 'Próximas provas', entries: upcoming.filter((item) => item.kind === 'exam') },
+    { title: 'Outros compromissos nos próximos sete dias', entries: upcoming.filter((item) => item.kind === 'task' && item.date > today && item.date <= end) },
   ];
 
   return (
