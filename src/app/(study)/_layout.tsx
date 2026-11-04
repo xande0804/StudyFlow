@@ -16,6 +16,7 @@ export default function StudyLayout() {
       tabBarInactiveTintColor: '#bec6de',
     }}>
       <Tabs.Screen name="materias" options={{ title: 'Matérias' }} />
+      <Tabs.Screen name="atividades" options={{ title: 'Atividades' }} />
       <Tabs.Screen name="conta" options={{ title: 'Conta' }} />
     </Tabs>
   );
