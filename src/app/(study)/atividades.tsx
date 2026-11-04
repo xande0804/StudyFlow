@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Button, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Button, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { changeActivity, saveActivity, watchActivities, type Activity } from '../../activities';
 import { useSession } from '../../session';
 import { watchSubjects, type Subject } from '../../subjects';
 
 const empty: Activity = { id: '', kind: 'task', title: '', subjectId: '', date: '', time: '', description: '', done: false };
 const filters = [{ value: 'all', label: 'Tudo' }, { value: 'task', label: 'Tarefas' }, { value: 'exam', label: 'Provas' }] as const;
+const formatDate = (date: string) => date.split('-').reverse().join('/');
 const fields = [
-  { key: 'title', label: 'Título', limit: 120 },
-  { key: 'date', label: 'Data (AAAA-MM-DD)', limit: 10 },
-  { key: 'time', label: 'Horário opcional (HH:MM)', limit: 5 },
-  { key: 'description', label: 'Descrição opcional', limit: 1000 },
+  { key: 'title', label: 'Título', placeholder: 'Ex.: Revisar matemática', limit: 120 },
+  { key: 'date', label: 'Data (DD/MM/AAAA)', placeholder: 'Ex.: 10/11/2026', limit: 10 },
+  { key: 'time', label: 'Horário opcional (HH:MM)', placeholder: 'Ex.: 14:30', limit: 5 },
+  { key: 'description', label: 'Descrição opcional', placeholder: 'Ex.: Revisar os capítulos 2 e 3', limit: 1000 },
 ] as const;
 
 export default function ActivitiesScreen() {
@@ -26,6 +27,16 @@ function Activities({ uid }: { uid: string }) {
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState('');
+  const [formOpen, setFormOpen] = useState(false);
+  const [detailId, setDetailId] = useState('');
+  const detail = items?.find((item) => item.id === detailId);
+
+  function openForm(item?: Activity) {
+    setMessage('');
+    setDetailId('');
+    setForm(item ? { ...item, date: formatDate(item.date) } : empty);
+    setFormOpen(true);
+  }
   useEffect(() => watchActivities(uid, setItems), [uid]);
   useEffect(() => watchSubjects(uid, setSubjects, () => setSubjects(null)), [uid]);
 
@@ -46,32 +57,57 @@ function Activities({ uid }: { uid: string }) {
   const online = Boolean(items && subjects);
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Text style={styles.heading}>{form.id ? 'Editar atividade' : 'Nova atividade'}</Text>
-      {!online && <Text style={styles.text}>{items === undefined || subjects === undefined ? 'Carregando…' : 'Dados indisponíveis. Confira a conexão.'}</Text>}
-      {subjects?.length === 0 && <Text style={styles.text}>Cadastre uma matéria para criar atividades.</Text>}
-      <View style={styles.row}>
-        <Button title="Tarefa" disabled={busy || form.kind === 'task'} onPress={() => setForm({ ...form, kind: 'task' })} />
-        <Button title="Prova" disabled={busy || form.kind === 'exam'} onPress={() => setForm({ ...form, kind: 'exam' })} />
-      </View>
-      {fields.map(({ key, label, limit }) => (
-        <View key={key} style={styles.field}>
-          <Text style={styles.text}>{label}</Text>
-          <TextInput accessibilityLabel={label} style={styles.input} maxLength={limit}
-            value={form[key]} editable={!busy} multiline={key === 'description'}
-            onChangeText={(value) => setForm((current) => ({ ...current, [key]: value }))} />
+      <Button title="Nova atividade" disabled={!online || !subjects?.length} onPress={() => openForm()} />
+      <Modal visible={formOpen} transparent animationType="fade" onRequestClose={() => { if (!busy) setFormOpen(false); }}>
+        <View style={styles.backdrop}>
+          <ScrollView style={styles.modal} contentContainerStyle={styles.modalContent} keyboardShouldPersistTaps="handled">
+            <View accessibilityViewIsModal style={styles.group}>
+              <Text style={styles.heading}>{form.id ? 'Editar atividade' : 'Nova atividade'}</Text>
+              {!online && <Text style={styles.text}>{items === undefined || subjects === undefined ? 'Carregando…' : 'Dados indisponíveis. Confira a conexão.'}</Text>}
+              {subjects?.length === 0 && <Text style={styles.text}>Cadastre uma matéria para criar atividades.</Text>}
+              <View style={styles.row}>
+                <Button title="Tarefa" disabled={busy || form.kind === 'task'} onPress={() => setForm({ ...form, kind: 'task' })} />
+                <Button title="Prova" disabled={busy || form.kind === 'exam'} onPress={() => setForm({ ...form, kind: 'exam' })} />
+              </View>
+              {fields.map(({ key, label, placeholder, limit }) => (
+                <View key={key} style={styles.field}>
+                  <Text style={styles.text}>{label}</Text>
+                  <TextInput accessibilityLabel={label} placeholder={placeholder} placeholderTextColor="#a0abc7" style={styles.input} maxLength={limit}
+                    value={form[key]} editable={!busy} multiline={key === 'description'}
+                    onChangeText={(value) => setForm((current) => ({ ...current, [key]: value }))} />
+                </View>
+              ))}
+              <Text style={styles.text}>Matéria</Text>
+              <View style={styles.row}>
+                {subjects?.map((subject) => (
+                  <Button key={subject.id} title={subject.name} disabled={busy || form.subjectId === subject.id}
+                    onPress={() => setForm({ ...form, subjectId: subject.id })} />
+                ))}
+              </View>
+              <Button title="Salvar atividade" disabled={busy || !online || !subjects?.length}
+                onPress={() => perform(() => saveActivity(uid, { ...form, date: form.date.split('/').reverse().join('-') }), () => { setFormOpen(false); setForm(empty); setMessage('Atividade salva.'); })} />
+              <Button title="Cancelar" disabled={busy} onPress={() => setFormOpen(false)} />
+              {!!message && <Text accessibilityLiveRegion="polite" style={styles.text}>{message}</Text>}
+            </View>
+          </ScrollView>
         </View>
-      ))}
-      <Text style={styles.text}>Matéria</Text>
-      <View style={styles.row}>
-        {subjects?.map((subject) => (
-          <Button key={subject.id} title={subject.name} disabled={busy || form.subjectId === subject.id}
-            onPress={() => setForm({ ...form, subjectId: subject.id })} />
-        ))}
-      </View>
-      <Button title="Salvar atividade" disabled={busy || !online || !subjects?.length}
-        onPress={() => perform(() => saveActivity(uid, form), () => { setForm(empty); setMessage('Atividade salva.'); })} />
-      {!!form.id && <Button title="Cancelar edição" disabled={busy} onPress={() => setForm(empty)} />}
-      {!!message && <Text accessibilityLiveRegion="polite" style={styles.text}>{message}</Text>}
+      </Modal>
+      <Modal visible={Boolean(detail)} transparent animationType="fade" onRequestClose={() => setDetailId('')}>
+        <View style={styles.backdrop}>
+          <ScrollView style={styles.modal} contentContainerStyle={styles.modalContent}>
+            <View accessibilityViewIsModal style={styles.group}>
+              <Text accessibilityRole="header" style={styles.heading}>{detail?.title}</Text>
+              <Text style={styles.text}>{detail?.kind === 'exam' ? 'Prova' : 'Tarefa'} · {detail?.done ? 'Histórico' : 'Pendente'}</Text>
+              <Text style={styles.text}>{subjects?.find((subject) => subject.id === detail?.subjectId)?.name}</Text>
+              <Text style={styles.text}>{detail && formatDate(detail.date)} {detail?.time}</Text>
+              {!!detail?.description && <Text style={styles.text}>{detail.description}</Text>}
+              <Button title="Editar atividade" onPress={() => { if (detail) openForm(detail); }} />
+              <Button title="Fechar detalhes" onPress={() => setDetailId('')} />
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+      {!formOpen && !!message && <Text accessibilityLiveRegion="polite" style={styles.text}>{message}</Text>}
       <View style={styles.row}>
         {filters.map(({ value, label }) => <Button key={value} title={label} disabled={filter === value} onPress={() => setFilter(value)} />)}
       </View>
@@ -81,8 +117,10 @@ function Activities({ uid }: { uid: string }) {
           {!visible.some((item) => item.done === done) && <Text style={styles.text}>Nenhuma atividade.</Text>}
           {visible.filter((item) => item.done === done).map((item) => (
             <View key={item.id} style={styles.card}>
-              <Text style={styles.text}>{item.title}</Text>
-              <Text style={styles.text}>{item.kind === 'exam' ? 'Prova' : 'Tarefa'} · {subjects?.find((subject) => subject.id === item.subjectId)?.name} · {item.date} {item.time}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={`Ver detalhes de ${item.title}`} onPress={() => setDetailId(item.id)}>
+                <Text style={styles.text}>{item.title}</Text>
+              </Pressable>
+              <Text style={styles.text}>{item.kind === 'exam' ? 'Prova' : 'Tarefa'} · {subjects?.find((subject) => subject.id === item.subjectId)?.name} · {formatDate(item.date)} {item.time}</Text>
               {!!item.description && <Text style={styles.text}>{item.description}</Text>}
               {confirm === item.id ? (
                 <>
@@ -95,7 +133,7 @@ function Activities({ uid }: { uid: string }) {
                 </>
               ) : (
                 <View style={styles.row}>
-                  <Button title="Editar" disabled={busy} onPress={() => setForm(item)} />
+                  <Button title="Editar" disabled={busy} onPress={() => openForm(item)} />
                   <Button title={done ? 'Reabrir' : item.kind === 'exam' ? 'Marcar realizada' : 'Concluir'} disabled={busy}
                     onPress={() => perform(() => changeActivity(uid, item.id, !done), () => {
                       setForm((current) => current.id === item.id ? { ...current, done: !done } : current);
@@ -120,5 +158,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   field: { gap: 5 },
   group: { gap: 10 },
+  backdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16, backgroundColor: '#000a' },
+  modal: { flexGrow: 0, maxHeight: '90%', width: '100%', maxWidth: 560, borderRadius: 16, backgroundColor: '#182035' },
+  modalContent: { padding: 20 },
   card: { padding: 12, gap: 8, borderColor: '#7886a6', borderWidth: 1, borderRadius: 8 },
 });
