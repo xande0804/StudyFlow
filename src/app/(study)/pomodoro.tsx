@@ -1,6 +1,7 @@
+import { reconcileNotices } from '../../notices';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Button, Modal, Platform, StyleSheet, Text, TextInput, Vibration, View } from 'react-native';
+import { AppState, Button, DeviceEventEmitter, Modal, Platform, StyleSheet, Text, TextInput, Vibration, View } from 'react-native';
 import { useSession } from '../../session';
 
 type Mode = 'focus' | 'rest';
@@ -59,6 +60,21 @@ function Pomodoro({ uid }: { uid: string }) {
   }, [timer?.endsAt]);
 
   const endsAt = timer?.endsAt;
+  const mode = timer?.mode;
+  const ready = Boolean(timer);
+  useEffect(() => {
+    if (!ready) return;
+    const scope = 'pomodoro:' + uid;
+    function refresh() {
+      const desired = endsAt ? [{ id: scope, title: 'Sessão concluída',
+        body: mode === 'focus' ? 'Seu tempo de foco terminou.' : 'Seu descanso terminou.', at: endsAt }] : [];
+      reconcileNotices(scope, desired).catch((error) => console.warn('StudyFlow Pomodoro:', error));
+    }
+    refresh();
+    const subscription = AppState.addEventListener('change', (state) => { if (state === 'active') refresh(); });
+    const permission = DeviceEventEmitter.addListener('studyflow-notice-permission', refresh);
+    return () => { subscription.remove(); permission.remove(); };
+  }, [endsAt, mode, ready, uid]);
   useEffect(() => {
     if (!endsAt || now < endsAt) return;
     setTimer((current) => current?.endsAt === endsAt ? { ...current, endsAt: null, remaining: 0 } : current);

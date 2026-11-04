@@ -1,9 +1,11 @@
+import { useActivityNotices } from '../../useActivityNotices';
 import { Redirect, Tabs } from 'expo-router';
 import { ActivityIndicator } from 'react-native';
 import { useSession } from '../../session';
 
 export default function StudyLayout() {
   const { user, loading } = useSession();
+  useActivityNotices(user?.uid);
   if (loading) return <ActivityIndicator />;
   if (!user) return <Redirect href="/" />;
 
