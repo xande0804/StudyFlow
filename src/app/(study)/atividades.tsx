@@ -13,10 +13,27 @@ const reminders = [
 ] as const;
 const filters = [{ value: 'all', label: 'Tudo' }, { value: 'task', label: 'Tarefas' }, { value: 'exam', label: 'Provas' }] as const;
 const formatDate = (date: string) => date.split('-').reverse().join('/');
+function formatScheduleInput(field: 'date' | 'time', input: string) {
+  const digits = input.replace(/\D/g, '').slice(0, field === 'date' ? 8 : 4);
+  const parts = [digits.slice(0, 2), digits.slice(2, 4)];
+  if (field === 'date') parts.push(digits.slice(4));
+  return parts.filter(Boolean).join(field === 'date' ? '/' : ':');
+}
+
+function relativeDate(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return formatScheduleInput('date', [
+    String(date.getDate()).padStart(2, '0'),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getFullYear()),
+  ].join(''));
+}
+
 const fields = [
   { key: 'title', label: 'Título', placeholder: 'Ex.: Revisar matemática', limit: 120 },
-  { key: 'date', label: 'Data (DD/MM/AAAA)', placeholder: 'Ex.: 10/11/2026', limit: 10 },
-  { key: 'time', label: 'Horário opcional (HH:MM)', placeholder: 'Ex.: 14:30', limit: 5 },
+  { key: 'date', label: 'Data (DD/MM/AAAA)', placeholder: 'Ex.: 10112026', limit: 10 },
+  { key: 'time', label: 'Horário opcional (HH:MM)', placeholder: 'Ex.: 1430', limit: 5 },
   { key: 'description', label: 'Descrição opcional', placeholder: 'Ex.: Revisar os capítulos 2 e 3', limit: 1000 },
 ] as const;
 
@@ -83,7 +100,16 @@ function Activities({ uid }: { uid: string }) {
                   <Text style={styles.text}>{label}</Text>
                   <TextInput accessibilityLabel={label} placeholder={placeholder} placeholderTextColor="#a0abc7" style={styles.input} maxLength={limit}
                     value={form[key]} editable={!busy} multiline={key === 'description'}
-                    onChangeText={(value) => setForm((current) => ({ ...current, [key]: value }))} />
+                    inputMode={key === 'date' || key === 'time' ? 'numeric' : 'text'}
+                    onChangeText={(value) => setForm((current) => ({
+                      ...current, [key]: key === 'date' || key === 'time' ? formatScheduleInput(key, value) : value,
+                    }))} />
+                  {key === 'date' && (
+                    <View style={styles.row}>
+                      <Button title="Hoje" disabled={busy} onPress={() => setForm((current) => ({ ...current, date: relativeDate(0) }))} />
+                      <Button title="Amanhã" disabled={busy} onPress={() => setForm((current) => ({ ...current, date: relativeDate(1) }))} />
+                    </View>
+                  )}
                 </View>
               ))}
               <Text style={styles.text}>Matéria</Text>
