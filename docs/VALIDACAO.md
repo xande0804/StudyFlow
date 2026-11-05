@@ -34,3 +34,4 @@ Use o SDK JavaScript modular do Firebase com o Expo e centralize a inicializaç�
 
 - Lembrete de atividade no emulador Android 16: com a sessão ativa e o app em segundo plano, o aviso de uma hora antes foi entregue. Em novo teste com aviso futuro e logout antes do disparo, o aviso não apareceu após o horário previsto.
 - Pomodoro pausado no emulador Android 16: o aviso não tocou após a pausa, conforme confirmado no teste manual.
+- Lembrete de prova no emulador Android 16: o aviso foi entregue com a conta logada. Em outro teste com aviso futuro e logout antes do disparo, o aviso não apareceu, conforme confirmação do usuário em 05/11/2026.
