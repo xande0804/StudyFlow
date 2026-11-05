@@ -50,6 +50,7 @@ function Activities({ uid }: { uid: string }) {
   const [confirm, setConfirm] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const [descriptionHovered, setDescriptionHovered] = useState(false);
   const [detailId, setDetailId] = useState('');
   const detail = items?.find((item) => item.id === detailId);
 
@@ -180,8 +181,12 @@ function Activities({ uid }: { uid: string }) {
               <View style={styles.formSection}>
                 <Pressable accessibilityRole="button" accessibilityState={{ expanded: descriptionOpen }}
                   accessibilityLabel="Descrição opcional" disabled={busy}
+                  accessibilityHint="Abre ou recolhe o campo de descrição."
+                  onHoverIn={() => setDescriptionHovered(true)} onHoverOut={() => setDescriptionHovered(false)}
                   onPress={() => setDescriptionOpen(!descriptionOpen)}
-                  style={({ pressed }) => [styles.descriptionToggle, pressed && styles.descriptionPressed]}>
+                  style={({ pressed }) => [styles.descriptionToggle,
+                    (descriptionHovered || descriptionOpen) && styles.descriptionHighlighted,
+                    pressed && styles.descriptionPressed]}>
                   <SymbolView name={{ ios: 'text.alignleft', android: 'notes', web: 'notes' }} size={19} tintColor="#a2aec6" />
                   <Text style={styles.descriptionLabel}>Descrição</Text>
                   <Text style={styles.optionalLabel}>Opcional</Text>
@@ -291,8 +296,10 @@ const styles = StyleSheet.create({
   reminderOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   reminderOption: { flexBasis: 180, flexGrow: 1, flexShrink: 1 },
   descriptionInput: { minHeight: 90, textAlignVertical: 'top' },
-  descriptionToggle: { paddingVertical: 10, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 8 },
-  descriptionPressed: { opacity: 0.65 },
+  descriptionToggle: { paddingVertical: 13, paddingHorizontal: 14, minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 10,
+    borderRadius: 12, borderWidth: 1, borderColor: '#3b4763', backgroundColor: '#1e283e' },
+  descriptionHighlighted: { borderColor: '#9c88dd', backgroundColor: '#292a46' },
+  descriptionPressed: { opacity: 0.8, backgroundColor: '#353152' },
   descriptionLabel: { color: '#dce2ef', fontSize: 14, fontWeight: '500', flex: 1 },
   optionalLabel: { color: '#8795af', fontSize: 12 },
   formFooter: { borderTopWidth: 1, borderTopColor: '#2b354c', padding: 18, gap: 10 },
