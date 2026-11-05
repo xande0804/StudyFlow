@@ -1,4 +1,5 @@
 import { Button } from '../../Button';
+import { SymbolView } from 'expo-symbols';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { changeActivity, reminderTime, saveActivity, watchActivities, type Activity } from '../../activities';
@@ -78,7 +79,7 @@ function Activities({ uid }: { uid: string }) {
   function field(key: 'title' | 'date' | 'time' | 'description', label: string, placeholder: string, limit: number) {
     return (
       <View style={styles.field}>
-        <Text style={styles.label}>{label}</Text>
+        {key !== 'description' && <Text style={styles.label}>{label}</Text>}
         <TextInput accessibilityLabel={label} placeholder={placeholder} placeholderTextColor="#7f8da9"
           style={[styles.input, key === 'description' && styles.descriptionInput]}
           maxLength={limit} value={form[key]} editable={!busy} multiline={key === 'description'}
@@ -178,8 +179,15 @@ function Activities({ uid }: { uid: string }) {
               </View>
               <View style={styles.formSection}>
                 <Pressable accessibilityRole="button" accessibilityState={{ expanded: descriptionOpen }}
-                  disabled={busy} onPress={() => setDescriptionOpen(!descriptionOpen)} style={styles.descriptionToggle}>
-                  <Text style={styles.label}>{descriptionOpen ? '−' : '+'} Descrição opcional</Text>
+                  accessibilityLabel="Descrição opcional" disabled={busy}
+                  onPress={() => setDescriptionOpen(!descriptionOpen)}
+                  style={({ pressed }) => [styles.descriptionToggle, pressed && styles.descriptionPressed]}>
+                  <SymbolView name={{ ios: 'text.alignleft', android: 'notes', web: 'notes' }} size={19} tintColor="#a2aec6" />
+                  <Text style={styles.descriptionLabel}>Descrição</Text>
+                  <Text style={styles.optionalLabel}>Opcional</Text>
+                  <SymbolView name={descriptionOpen
+                    ? { ios: 'chevron.up', android: 'expand_less', web: 'expand_less' }
+                    : { ios: 'chevron.down', android: 'expand_more', web: 'expand_more' }} size={19} tintColor="#a2aec6" />
                 </Pressable>
                 {descriptionOpen && field('description', 'Descrição', 'Detalhes, capítulos ou orientações para esta atividade.', 1000)}
               </View>
@@ -283,7 +291,10 @@ const styles = StyleSheet.create({
   reminderOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   reminderOption: { flexBasis: 180, flexGrow: 1, flexShrink: 1 },
   descriptionInput: { minHeight: 90, textAlignVertical: 'top' },
-  descriptionToggle: { paddingVertical: 6, minHeight: 38, justifyContent: 'center' },
+  descriptionToggle: { paddingVertical: 10, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 8 },
+  descriptionPressed: { opacity: 0.65 },
+  descriptionLabel: { color: '#dce2ef', fontSize: 14, fontWeight: '500', flex: 1 },
+  optionalLabel: { color: '#8795af', fontSize: 12 },
   formFooter: { borderTopWidth: 1, borderTopColor: '#2b354c', padding: 18, gap: 10 },
   footerActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' },
   activityTitle: { fontSize: 18, fontWeight: '600', color: '#f4f5ff', lineHeight: 25 },
