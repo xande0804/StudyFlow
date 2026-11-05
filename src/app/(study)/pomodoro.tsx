@@ -1,8 +1,9 @@
+import { Button } from '../../Button';
 import { initialTimer, restoreTimer, type Timer } from '../../pomodoroState';
 import { reconcileNotices } from '../../notices';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Button, DeviceEventEmitter, Modal, Platform, StyleSheet, Text, TextInput, Vibration, View } from 'react-native';
+import { AppState, DeviceEventEmitter, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, Vibration, View } from 'react-native';
 import { useSession } from '../../session';
 
 type Mode = 'focus' | 'rest';
@@ -88,7 +89,7 @@ function Pomodoro({ uid }: { uid: string }) {
   const clock = [Math.floor(seconds / 60), seconds % 60].map((value) => String(value).padStart(2, '0')).join(':');
 
   function chooseMode(mode: Mode) {
-    if (!timer || timer.endsAt) return;
+    if (!timer || timer.endsAt || timer.mode === mode) return;
     const duration = timer[mode] * 60000;
     setTimer({ ...timer, mode, duration, remaining: duration });
     setMessage('');
@@ -124,15 +125,25 @@ function Pomodoro({ uid }: { uid: string }) {
   }
 
   return (
-    <View style={styles.screen}>
+    <ScrollView style={styles.background} contentContainerStyle={styles.screen}>
+      <Text style={styles.eyebrow}>MENOS DISTRAÇÃO, MAIS PRESENÇA</Text>
+      <Text accessibilityRole="header" style={styles.heading}>Seu momento de foco.</Text>
+      <Text style={styles.caption}>Escolha um ritmo e cuide de uma coisa por vez.</Text>
       <View style={styles.row}>
-        <Button title="Foco" disabled={timer.mode === 'focus' || Boolean(timer.endsAt)} onPress={() => chooseMode('focus')} />
-        <Button title="Descanso" disabled={timer.mode === 'rest' || Boolean(timer.endsAt)} onPress={() => chooseMode('rest')} />
+        <Button title="Foco" selected={timer.mode === 'focus'} disabled={Boolean(timer.endsAt)} onPress={() => chooseMode('focus')} />
+        <Button title="Descanso" selected={timer.mode === 'rest'} disabled={Boolean(timer.endsAt)} onPress={() => chooseMode('rest')} />
       </View>
-      <Text style={styles.clock}>{clock}</Text>
+      <View style={[styles.timerFace, timer.mode === 'rest' && styles.restFace]}>
+        <Text style={styles.timerLabel}>{timer.mode === 'focus' ? 'FOCO' : 'DESCANSO'}</Text>
+        <Text accessibilityLabel={'Tempo restante ' + clock} style={styles.clock}>{clock}</Text>
+        <Text style={styles.caption}>{timer.endsAt ? 'Em andamento' : remaining === 0 ? 'Sessão concluída' : remaining < timer.duration ? 'Em pausa' : 'Pronto para começar'}</Text>
+      </View>
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: String(Math.min(100, Math.max(0, (timer.duration - remaining) / timer.duration * 100))) + '%' as `${number}%` }]} />
+      </View>
       {!!message && <Text accessibilityLiveRegion="polite" style={styles.text}>{message}</Text>}
       <View style={styles.row}>
-        <Button title={timer.endsAt ? 'Pausar' : remaining > 0 && remaining < timer.duration ? 'Continuar' : 'Iniciar'} onPress={toggle} />
+        <Button variant="primary" title={timer.endsAt ? 'Pausar' : remaining > 0 && remaining < timer.duration ? 'Continuar' : 'Iniciar'} onPress={toggle} />
         <Button title="Reiniciar" onPress={() => setDialog('reset')} />
         <Button title="Configurar" onPress={() => {
           setSettings({ focus: String(timer.focus), rest: String(timer.rest) });
@@ -168,16 +179,25 @@ function Pomodoro({ uid }: { uid: string }) {
           </View>
         </View>
       </Modal>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, padding: 24, gap: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#101422' },
+  background: { flex: 1, backgroundColor: '#0e1220' },
+  screen: { flexGrow: 1, padding: 24, paddingBottom: 40, gap: 20, alignItems: 'center', justifyContent: 'center' },
+  eyebrow: { color: '#b9a5ff', fontSize: 10, letterSpacing: 1.5, fontWeight: '700', textAlign: 'center' },
+  heading: { color: '#f5f3ff', fontSize: 28, fontWeight: '700', letterSpacing: -0.8, textAlign: 'center' },
+  caption: { color: '#9ca8c2', fontSize: 14, lineHeight: 22, textAlign: 'center' },
+  timerFace: { width: 260, height: 260, borderRadius: 130, borderWidth: 3, borderColor: '#b9a5ff', backgroundColor: '#171b30', alignItems: 'center', justifyContent: 'center', gap: 10, marginVertical: 8 },
+  restFace: { borderColor: '#89dfcb', backgroundColor: '#15292d' },
+  timerLabel: { color: '#cfc4f6', fontSize: 11, fontWeight: '700', letterSpacing: 2 },
+  progressTrack: { height: 4, width: 200, backgroundColor: '#2d354c', borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: 4, backgroundColor: '#b9a5ff' },
   text: { color: '#f4f5ff', fontSize: 16 },
   clock: { color: '#f4f5ff', fontSize: 64, fontVariant: ['tabular-nums'], fontWeight: '700' },
   row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
   backdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20, backgroundColor: '#000a' },
-  dialog: { gap: 12, padding: 20, borderRadius: 16, width: '100%', maxWidth: 440, backgroundColor: '#182035' },
-  input: { color: '#f4f5ff', borderColor: '#7886a6', borderWidth: 1, borderRadius: 8, padding: 12 },
+  dialog: { gap: 12, padding: 20, borderRadius: 22, width: '100%', maxWidth: 440, backgroundColor: '#171e30' },
+  input: { color: '#f4f5ff', borderColor: '#34405b', borderWidth: 1, borderRadius: 12, padding: 12 },
 });

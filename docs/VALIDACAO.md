@@ -60,3 +60,12 @@ As matérias anteriores receberam metadados de vínculos por manutenção admini
 - [ ] Conferir postagem da proposta e os prazos no Classroom, que estão em aberto no PDF.
 - [ ] Preparar vídeo de 3 a 5 minutos ou apresentação com app em execução.
 - [ ] Revisar PR antes do merge em develop e preparar a versão estável em main.
+
+## Revisão visual em 05/11/2026
+
+- Componentes de botão padronizados, com seleção explícita, estados de pressionado e desabilitado.
+- Painel com indicadores acadêmicos e cartões responsivos, conferido no navegador em largura de 390px.
+- Pomodoro com modo escolhido destacado, relógio central e progresso. Início, pausa e reinício conferidos após a troca dos botões.
+- Ícones das abas carregados no navegador. Modais de atividades mantêm seleção de tipo, matéria e lembrete.
+- Usuário confirmou que sair da conta cancela também o aviso do Pomodoro.
+- Ainda é necessária a revisão do visual no Android após sincronização. iOS e vibração física permanecem pendentes.

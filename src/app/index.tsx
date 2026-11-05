@@ -1,6 +1,7 @@
+import { Button } from '../Button';
 import { Redirect } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Button, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../firebaseConnection';
@@ -64,6 +65,8 @@ export default function Home() {
         <Text style={styles.text}>{label}</Text>
         <TextInput
           accessibilityLabel={label}
+          placeholder={key === 'email' ? 'voce@exemplo.com' : key === 'name' ? 'Como podemos chamar você?' : key === 'confirmation' ? 'Repita sua senha' : 'Sua senha'}
+          placeholderTextColor="#7f8ca8"
           style={[styles.input, errors[key] && styles.invalid]}
           value={form[key]}
           editable={!busy}
@@ -83,7 +86,10 @@ export default function Home() {
     <SafeAreaView style={styles.screen}>
       <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+                    <View style={styles.brandMark}><Text style={styles.brandLetter}>S</Text></View>
+          <Text style={styles.eyebrow}>ORGANIZE. FOQUE. AVANCE.</Text>
           <Text accessibilityRole="header" style={styles.title}>StudyFlow</Text>
+          <Text style={styles.subtitle}>Seus estudos com mais clareza e um ritmo que funciona para você.</Text>
           {loading ? <ActivityIndicator /> : !auth ? (
             <Text style={styles.text}>Configure a conexão com o Firebase para continuar.</Text>
           ) : (
@@ -93,7 +99,7 @@ export default function Home() {
               {field('email', 'E-mail')}
               {field('password', 'Senha')}
               {mode === 'register' && field('confirmation', 'Confirme a senha')}
-              <Button title={titles[mode]} disabled={busy} onPress={submit} />
+              <Button variant="primary" title={titles[mode]} disabled={busy} onPress={submit} />
               {mode === 'login' ? (
                 <>
                   <Button title="Criar conta" disabled={busy} onPress={() => changeMode('register')} />
@@ -110,11 +116,15 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#101422' },
-  content: { flexGrow: 1, justifyContent: 'center', padding: 24, gap: 12, width: '100%', maxWidth: 520, alignSelf: 'center' },
-  title: { color: '#f4f5ff', fontSize: 36, fontWeight: '700' },
+  screen: { flex: 1, backgroundColor: '#0e1220' },
+  content: { flexGrow: 1, justifyContent: 'center', padding: 24, gap: 12, width: '100%', maxWidth: 440, alignSelf: 'center' },
+  brandMark: { width: 48, height: 48, borderRadius: 16, backgroundColor: '#b9a5ff', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  brandLetter: { fontSize: 28, fontWeight: '800', color: '#211939' },
+  eyebrow: { color: '#ad9de0', fontSize: 10, fontWeight: '700', letterSpacing: 1.8 },
+  subtitle: { color: '#9ca8c2', fontSize: 15, lineHeight: 23, marginBottom: 16 },
+  title: { color: '#f4f5ff', fontSize: 42, fontWeight: '700', letterSpacing: -1.5 },
   text: { color: '#bec6de', fontSize: 16 },
-  input: { color: '#f4f5ff', borderColor: '#7886a6', borderWidth: 1, borderRadius: 8, padding: 12 },
+  input: { color: '#f4f5ff', borderColor: '#34405b', borderWidth: 1, borderRadius: 12, padding: 12 },
   invalid: { borderColor: '#ff9aab' },
   error: { color: '#ff9aab' },
 });

@@ -1,5 +1,6 @@
+import { Button } from './Button';
 import { useEffect, useState } from 'react';
-import { Button, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { deleteSubject, saveSubject, subjectColors, watchSubjects, type Subject } from './subjects';
 
 const empty = { name: '', teacher: '', color: subjectColors[0] };
@@ -62,8 +63,8 @@ export function SubjectsPanel({ uid }: { uid: string }) {
 
   return (
     <View style={styles.panel}>
-      <Text accessibilityRole="header" style={styles.heading}>Matérias</Text>
-      <Button title="Nova matéria" disabled={Boolean(availability)} onPress={() => { reset(); setOpen(true); }} />
+      <Text style={styles.text}>Cada matéria, um lugar para organizar seus próximos passos.</Text>
+      <Button variant="primary" title="Nova matéria" disabled={Boolean(availability)} onPress={() => { reset(); setOpen(true); }} />
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => { if (!saving) setOpen(false); }}>
         <View style={styles.backdrop}>
           <ScrollView style={styles.modal} contentContainerStyle={styles.modalContent} keyboardShouldPersistTaps="handled">
@@ -81,14 +82,14 @@ export function SubjectsPanel({ uid }: { uid: string }) {
                     style={[styles.color, { backgroundColor: color, borderColor: form.color === color ? '#fff' : 'transparent' }]} />
                 ))}
               </View>
-              <Button title={saving ? 'Salvando…' : 'Salvar matéria'} disabled={saving || Boolean(availability)} onPress={save} />
+              <Button variant="primary" title={saving ? 'Salvando…' : 'Salvar matéria'} disabled={saving || Boolean(availability)} onPress={save} />
               {editing && (confirming ? (
                 <>
                   <Text style={styles.text}>Excluir esta matéria definitivamente?</Text>
-                  <Button title="Confirmar exclusão da matéria" disabled={saving} onPress={remove} />
+                  <Button variant="danger" title="Confirmar exclusão da matéria" disabled={saving} onPress={remove} />
                   <Button title="Voltar à edição" disabled={saving} onPress={() => setConfirming(false)} />
                 </>
-              ) : <Button title="Excluir matéria" disabled={saving || Boolean(availability)} onPress={() => setConfirming(true)} />)}
+              ) : <Button variant="danger" title="Excluir matéria" disabled={saving || Boolean(availability)} onPress={() => setConfirming(true)} />)}
               <Button title="Cancelar" disabled={saving} onPress={() => setOpen(false)} />
               {!!message && <Text accessibilityLiveRegion="polite" style={styles.text}>{message}</Text>}
             </View>
@@ -100,7 +101,7 @@ export function SubjectsPanel({ uid }: { uid: string }) {
         <Text style={styles.text}>Nenhuma matéria cadastrada.</Text>
       ) : subjects.map((subject) => (
         <Pressable key={subject.id} accessibilityRole="button" accessibilityLabel={`Editar ${subject.name}`} disabled={saving}
-          style={[styles.input, { borderLeftColor: subject.color, borderLeftWidth: 5 }]}
+          style={[styles.input, { borderLeftColor: subject.color, borderLeftWidth: 4, backgroundColor: '#171e30', padding: 20 }]}
           onPress={() => {
             setConfirming(false);
             setOpen(true);
@@ -108,7 +109,7 @@ export function SubjectsPanel({ uid }: { uid: string }) {
             setForm({ name: subject.name, teacher: subject.teacher, color: subject.color });
             setMessage('');
           }}>
-          <Text style={styles.text}>{subject.name}</Text>
+          <Text style={styles.subjectName}>{subject.name}</Text>
           {!!subject.teacher && <Text style={styles.text}>{subject.teacher}</Text>}
         </Pressable>
       ))}
@@ -118,12 +119,13 @@ export function SubjectsPanel({ uid }: { uid: string }) {
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16, backgroundColor: '#000a' },
-  modal: { flexGrow: 0, maxHeight: '90%', width: '100%', maxWidth: 560, borderRadius: 16, backgroundColor: '#182035' },
+  modal: { flexGrow: 0, maxHeight: '90%', width: '100%', maxWidth: 560, borderRadius: 22, backgroundColor: '#171e30' },
   modalContent: { padding: 20 },
   panel: { gap: 12 },
   heading: { color: '#f4f5ff', fontSize: 24, fontWeight: '700' },
+  subjectName: { color: '#f4f5ff', fontSize: 18, fontWeight: '600', marginBottom: 6 },
   text: { color: '#bec6de', fontSize: 16 },
-  input: { color: '#f4f5ff', borderColor: '#7886a6', borderWidth: 1, borderRadius: 8, padding: 12 },
+  input: { color: '#f4f5ff', borderColor: '#34405b', borderWidth: 1, borderRadius: 12, padding: 12 },
   colors: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   color: { width: 44, height: 44, borderRadius: 22, borderWidth: 3 },
 });

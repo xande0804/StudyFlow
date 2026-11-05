@@ -7,8 +7,8 @@ export default function SubjectsScreen() {
   if (!user) return null;
 
   return (
-    <ScrollView style={{ backgroundColor: '#101422' }}
-      contentContainerStyle={{ padding: 24, maxWidth: 560, width: '100%', alignSelf: 'center' }}
+    <ScrollView style={{ backgroundColor: '#0e1220' }}
+      contentContainerStyle={{ padding: 24, maxWidth: 800, width: '100%', alignSelf: 'center' }}
       keyboardShouldPersistTaps="handled">
       <SubjectsPanel key={user.uid} uid={user.uid} />
     </ScrollView>

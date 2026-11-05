@@ -1,5 +1,6 @@
+import { Button } from '../../Button';
 import { useEffect, useState } from 'react';
-import { Button, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { changeActivity, reminderTime, saveActivity, watchActivities, type Activity } from '../../activities';
 import { useSession } from '../../session';
 import { watchSubjects, type Subject } from '../../subjects';
@@ -86,7 +87,8 @@ function Activities({ uid }: { uid: string }) {
   const reminderPassed = remindAt !== null && remindAt <= Date.now();
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Button title="Nova atividade" disabled={!online || !subjects?.length} onPress={() => openForm()} />
+      <Text style={styles.intro}>Seus próximos passos, com espaço para cada conquista.</Text>
+      <Button variant="primary" title="Nova atividade" disabled={!online || !subjects?.length} onPress={() => openForm()} />
       <Modal visible={formOpen} transparent animationType="fade" onRequestClose={() => { if (!busy) setFormOpen(false); }}>
         <View style={styles.backdrop}>
           <ScrollView style={styles.modal} contentContainerStyle={styles.modalContent} keyboardShouldPersistTaps="handled">
@@ -95,8 +97,8 @@ function Activities({ uid }: { uid: string }) {
               {!online && <Text style={styles.text}>{items === undefined || subjects === undefined ? 'Carregando…' : 'Dados indisponíveis. Confira a conexão.'}</Text>}
               {subjects?.length === 0 && <Text style={styles.text}>Cadastre uma matéria para criar atividades.</Text>}
               <View style={styles.row}>
-                <Button title="Tarefa" disabled={busy || form.kind === 'task'} onPress={() => setForm({ ...form, kind: 'task' })} />
-                <Button title="Prova" disabled={busy || form.kind === 'exam'} onPress={() => setForm({ ...form, kind: 'exam' })} />
+                <Button title="Tarefa" selected={form.kind === 'task'} disabled={busy} onPress={() => setForm({ ...form, kind: 'task' })} />
+                <Button title="Prova" selected={form.kind === 'exam'} disabled={busy} onPress={() => setForm({ ...form, kind: 'exam' })} />
               </View>
               {fields.map(({ key, label, placeholder, limit }) => (
                 <View key={key} style={styles.field}>
@@ -118,14 +120,14 @@ function Activities({ uid }: { uid: string }) {
               <Text style={styles.text}>Matéria</Text>
               <View style={styles.row}>
                 {subjects?.map((subject) => (
-                  <Button key={subject.id} title={subject.name} disabled={busy || form.subjectId === subject.id}
+                  <Button key={subject.id} title={subject.name} selected={form.subjectId === subject.id} disabled={busy}
                     onPress={() => setForm({ ...form, subjectId: subject.id })} />
                 ))}
               </View>
               <Text style={styles.text}>Lembrete</Text>
               <View style={styles.row}>
                 {reminders.map(({ value, label }) => (
-                  <Button key={value} title={label} disabled={busy || form.reminder === value}
+                  <Button key={value} title={label} selected={form.reminder === value} disabled={busy}
                     onPress={() => setForm({ ...form, reminder: value })} />
                 ))}
               </View>
@@ -134,7 +136,7 @@ function Activities({ uid }: { uid: string }) {
                   {reminderPassed ? 'O horário desse lembrete já passou.' : 'Aviso previsto para ' + displayClock(new Date(remindAt)) + '.'}
                 </Text>
               )}
-              <Button title="Salvar atividade" disabled={busy || !online || !subjects?.length}
+              <Button variant="primary" title="Salvar atividade" disabled={busy || !online || !subjects?.length}
                 onPress={() => perform(() => saveActivity(uid, draft), () => { setFormOpen(false); setForm(empty); setMessage('Atividade salva.'); })} />
               <Button title="Cancelar" disabled={busy} onPress={() => setFormOpen(false)} />
               {!!message && <Text accessibilityLiveRegion="polite" style={styles.text}>{message}</Text>}
@@ -160,7 +162,7 @@ function Activities({ uid }: { uid: string }) {
       </Modal>
       {!formOpen && !!message && <Text accessibilityLiveRegion="polite" style={styles.text}>{message}</Text>}
       <View style={styles.row}>
-        {filters.map(({ value, label }) => <Button key={value} title={label} disabled={filter === value} onPress={() => setFilter(value)} />)}
+        {filters.map(({ value, label }) => <Button key={value} title={label} selected={filter === value} onPress={() => setFilter(value)} />)}
       </View>
       {online && [false, true].map((done) => (
         <View key={String(done)} style={styles.group}>
@@ -178,7 +180,7 @@ function Activities({ uid }: { uid: string }) {
                   <Text style={styles.text}>Excluir definitivamente esta atividade?</Text>
                   <View style={styles.row}>
                     <Button title="Cancelar" disabled={busy} onPress={() => setConfirm('')} />
-                    <Button title="Confirmar exclusão" disabled={busy} onPress={() => perform(
+                    <Button variant="danger" title="Confirmar exclusão" disabled={busy} onPress={() => perform(
                       () => changeActivity(uid, item.id), () => { setConfirm(''); if (form.id === item.id) setForm(empty); })} />
                   </View>
                 </>
@@ -189,7 +191,7 @@ function Activities({ uid }: { uid: string }) {
                     onPress={() => perform(() => changeActivity(uid, item.id, !done), () => {
                       setForm((current) => current.id === item.id ? { ...current, done: !done } : current);
                     })} />
-                  <Button title="Excluir" disabled={busy} onPress={() => setConfirm(item.id)} />
+                  <Button variant="danger" title="Excluir" disabled={busy} onPress={() => setConfirm(item.id)} />
                 </View>
               )}
             </View>
@@ -201,16 +203,17 @@ function Activities({ uid }: { uid: string }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { backgroundColor: '#101422' },
-  content: { padding: 24, gap: 12, maxWidth: 620, width: '100%', alignSelf: 'center' },
+  intro: { color: '#9ca8c2', fontSize: 15, lineHeight: 24, marginBottom: 4 },
+  screen: { backgroundColor: '#0e1220' },
+  content: { padding: 24, gap: 12, maxWidth: 800, width: '100%', alignSelf: 'center' },
   heading: { color: '#f4f5ff', fontSize: 24, fontWeight: '700' },
   text: { color: '#bec6de', fontSize: 16 },
-  input: { color: '#f4f5ff', borderColor: '#7886a6', borderWidth: 1, borderRadius: 8, padding: 12 },
+  input: { color: '#f4f5ff', borderColor: '#34405b', borderWidth: 1, borderRadius: 12, padding: 12 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   field: { gap: 5 },
   group: { gap: 10 },
   backdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16, backgroundColor: '#000a' },
-  modal: { flexGrow: 0, maxHeight: '90%', width: '100%', maxWidth: 560, borderRadius: 16, backgroundColor: '#182035' },
+  modal: { flexGrow: 0, maxHeight: '90%', width: '100%', maxWidth: 560, borderRadius: 22, backgroundColor: '#171e30' },
   modalContent: { padding: 20 },
-  card: { padding: 12, gap: 8, borderColor: '#7886a6', borderWidth: 1, borderRadius: 8 },
+  card: { padding: 20, gap: 12, backgroundColor: '#171e30', borderColor: '#283149', borderWidth: 1, borderRadius: 18 },
 });
