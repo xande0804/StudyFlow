@@ -1,3 +1,4 @@
+import { initialTimer, restoreTimer, type Timer } from '../../pomodoroState';
 import { reconcileNotices } from '../../notices';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useRef, useState } from 'react';
@@ -5,16 +6,6 @@ import { AppState, Button, DeviceEventEmitter, Modal, Platform, StyleSheet, Text
 import { useSession } from '../../session';
 
 type Mode = 'focus' | 'rest';
-type Timer = {
-  mode: Mode;
-  focus: number;
-  rest: number;
-  duration: number;
-  remaining: number;
-  endsAt: number | null;
-};
-
-const initial: Timer = { mode: 'focus', focus: 25, rest: 5, duration: 1500000, remaining: 1500000, endsAt: null };
 
 export default function PomodoroScreen() {
   const { user } = useSession();
@@ -34,7 +25,14 @@ function Pomodoro({ uid }: { uid: string }) {
   useEffect(() => {
     let mounted = true;
     AsyncStorage.getItem(key).then((value) => {
-      if (mounted) setTimer(value ? JSON.parse(value) as Timer : initial);
+      if (!mounted) return;
+      try {
+        setNow(Date.now());
+        setTimer(restoreTimer(value));
+      } catch {
+        setTimer(initialTimer);
+        setMessage('A sessão salva estava inválida. O cronômetro foi restaurado para 25 minutos.');
+      }
     }).catch(() => {
       if (mounted) setMessage('Não foi possível carregar a sessão salva.');
     });
