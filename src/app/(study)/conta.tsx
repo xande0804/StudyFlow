@@ -33,7 +33,8 @@ export default function AccountScreen() {
         try {
           const allowed = await requestNotices();
           setMessage(allowed ? 'Notificações permitidas.' : 'Você pode permitir notificações nos ajustes do aparelho.');
-        } catch {
+        } catch (error) {
+          console.warn('StudyFlow permissão de notificações:', error);
           setMessage('Não foi possível verificar a permissão.');
         }
       }} />}

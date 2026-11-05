@@ -8,11 +8,12 @@ service cloud.firestore {
 
     function validSubject(uid, subjectId) {
       let data = request.resource.data;
-      return data.keys().hasOnly(['name', 'teacher', 'color', 'nameKey', 'linkVersion'])
+      return data.keys().hasOnly(['name', 'teacher', 'color', 'nameKey', 'linkVersion', 'activityIds', 'lastActivityId'])
         && data.name is string && data.name.size() > 0 && data.name.size() <= 60
         && data.teacher is string && data.teacher.size() <= 80
         && data.color in ['#818cf8', '#2dd4bf', '#fb7185', '#fbbf24']
         && data.get('linkVersion', 0) is int && data.get('linkVersion', 0) >= 0
+        && data.activityIds is map && data.lastActivityId is string
         && data.nameKey is string && data.nameKey.size() > 0 && data.nameKey.size() <= 900
         && getAfter(/databases/$(database)/documents/users/$(uid)/subjectNames/$(data.nameKey)).data.subjectId == subjectId;
     }
@@ -38,24 +39,46 @@ service cloud.firestore {
         && existsAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(data.subjectId));
     }
 
-    function bumpsSubjectLink(uid, subjectId) {
-      let path = /databases/$(database)/documents/users/$(uid)/subjects/$(subjectId);
-      return getAfter(path).data.get('linkVersion', 0) == get(path).data.get('linkVersion', 0) + 1;
+    // activityIds records every pending and historical reference.
+    function linkedAfter(uid, subjectId, activityId) {
+      return getAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(subjectId)).data.activityIds.get(activityId, false) == true;
+    }
+
+    function unlinkedAfter(uid, subjectId, activityId) {
+      return !getAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(subjectId)).data.activityIds.keys().hasAny([activityId]);
+    }
+
+    function validLinkChange(uid, subjectId) {
+      let data = request.resource.data;
+      let activityId = data.lastActivityId;
+      let path = /databases/$(database)/documents/users/$(uid)/activities/$(activityId);
+      let before = exists(path) && get(path).data.subjectId == subjectId;
+      let after = existsAfter(path) && getAfter(path).data.subjectId == subjectId;
+      return activityId.matches('^[A-Za-z0-9]{20}$')
+        && data.diff(resource.data).affectedKeys().hasOnly(['activityIds', 'lastActivityId'])
+        && data.activityIds.diff(resource.data.activityIds).affectedKeys().hasOnly([activityId])
+        && before != after
+        && (before
+          ? resource.data.activityIds.get(activityId, false) == true && !data.activityIds.keys().hasAny([activityId])
+          : !resource.data.activityIds.keys().hasAny([activityId]) && data.activityIds.get(activityId, false) == true);
     }
 
     match /users/{uid}/activities/{activityId} {
-      allow read, delete: if owns(uid);
+      allow read: if owns(uid);
+      allow delete: if owns(uid) && unlinkedAfter(uid, resource.data.subjectId, activityId);
       allow create: if owns(uid) && validActivity(uid) && request.resource.data.done == false
-        && bumpsSubjectLink(uid, request.resource.data.subjectId);
+        && linkedAfter(uid, request.resource.data.subjectId, activityId);
       allow update: if owns(uid) && validActivity(uid)
-        && (resource.data.subjectId == request.resource.data.subjectId || bumpsSubjectLink(uid, request.resource.data.subjectId));
+        && (resource.data.subjectId == request.resource.data.subjectId || (linkedAfter(uid, request.resource.data.subjectId, activityId) && unlinkedAfter(uid, resource.data.subjectId, activityId)));
     }
 
     match /users/{uid}/subjects/{subjectId} {
       allow read: if owns(uid);
-      allow delete: if owns(uid) && !existsAfter(/databases/$(database)/documents/users/$(uid)/subjectNames/$(resource.data.nameKey));
-      allow create: if owns(uid) && validSubject(uid, subjectId);
+      allow delete: if owns(uid) && resource.data.activityIds.size() == 0 && !existsAfter(/databases/$(database)/documents/users/$(uid)/subjectNames/$(resource.data.nameKey));
+      allow create: if owns(uid) && validSubject(uid, subjectId)
+        && request.resource.data.activityIds.size() == 0 && request.resource.data.lastActivityId == '';
       allow update: if owns(uid) && validSubject(uid, subjectId)
+        && (validLinkChange(uid, subjectId) || (request.resource.data.activityIds == resource.data.activityIds && request.resource.data.lastActivityId == resource.data.lastActivityId))
         && (resource.data.nameKey == request.resource.data.nameKey
           || !existsAfter(/databases/$(database)/documents/users/$(uid)/subjectNames/$(resource.data.nameKey)));
     }

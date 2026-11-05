@@ -32,6 +32,7 @@ export async function saveSubject(uid: string, values: Pick<Subject, 'name' | 't
   const subjects = collection(db, 'users', uid, 'subjects');
   const subject = id ? doc(subjects, id) : doc(subjects);
   const nameRef = doc(db, 'users', uid, 'subjectNames', nameKey);
+  await getDocsFromServer(query(subjects, limit(1)));
 
   await runTransaction(db, async (transaction) => {
     const previous = id ? await transaction.get(subject) : undefined;
@@ -45,7 +46,7 @@ export async function saveSubject(uid: string, values: Pick<Subject, 'name' | 't
       transaction.delete(doc(db, 'users', uid, 'subjectNames', previousKey));
     }
     if (!reservation.exists()) transaction.set(nameRef, { subjectId: subject.id });
-    transaction.set(subject, { name, teacher, color: values.color, nameKey, linkVersion: previous?.data()?.linkVersion ?? 0 });
+    transaction.set(subject, { name, teacher, color: values.color, nameKey, linkVersion: previous?.data()?.linkVersion ?? 0, activityIds: previous?.data()?.activityIds ?? {}, lastActivityId: previous?.data()?.lastActivityId ?? '' });
   });
 }
 
