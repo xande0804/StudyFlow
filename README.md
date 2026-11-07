@@ -34,3 +34,16 @@ React Native, Expo, Firebase Authentication, Cloud Firestore e Git/GitHub.
 ## Trabalho acadêmico
 
 Projeto final da disciplina de Programação para Dispositivos Móveis — Análise e Desenvolvimento de Sistemas.
+
+## Executar a base do app
+
+A base usa Expo SDK 57. Use Node.js 22.13 ou posterior.
+
+```sh
+npm install
+npm start
+```
+
+Abra em um dispositivo ou emulador com ambiente compatível com o SDK 57. Para abrir no navegador, execute `npm run web`.
+
+Consulte a [SPEC v1.0](docs/SPEC.md) e o [roteiro de validação manual](docs/VALIDACAO.md). A base atual exibe a tela inicial. Os fluxos acadêmicos e a configuração do Firebase serão acrescentados durante a implementação.

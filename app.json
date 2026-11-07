@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "StudyFlow",
+    "slug": "studyflow",
+    "scheme": "studyflow",
+    "userInterfaceStyle": "dark",
+    "plugins": ["expo-router", "expo-notifications"],
+    "ios": { "bundleIdentifier": "com.studyflow.app" },
+    "android": {
+      "package": "com.studyflow.app",
+      "permissions": ["android.permission.SCHEDULE_EXACT_ALARM"]
+    }
+  }
+}

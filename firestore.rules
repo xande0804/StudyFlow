@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Subjects and their unique-name reservations live under the owner UID.
+    function owns(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function validSubject(uid, subjectId) {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['name', 'teacher', 'color', 'nameKey', 'linkVersion', 'activityIds', 'lastActivityId'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 60
+        && data.teacher is string && data.teacher.size() <= 80
+        && data.color in ['#818cf8', '#2dd4bf', '#fb7185', '#fbbf24']
+        && data.get('linkVersion', 0) is int && data.get('linkVersion', 0) >= 0
+        && data.activityIds is map && data.lastActivityId is string
+        && data.nameKey is string && data.nameKey.size() > 0 && data.nameKey.size() <= 900
+        && getAfter(/databases/$(database)/documents/users/$(uid)/subjectNames/$(data.nameKey)).data.subjectId == subjectId;
+    }
+
+    function validName(uid, nameKey) {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['subjectId']) && data.subjectId is string
+        && getAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(data.subjectId)).data.nameKey == nameKey;
+    }
+
+    function validActivity(uid) {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['kind', 'title', 'subjectId', 'date', 'time', 'description', 'done', 'reminder'])
+        && data.kind in ['task', 'exam']
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 120
+        && data.subjectId is string && data.subjectId.matches('^[A-Za-z0-9]{20}$')
+        && data.date is string && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && data.time is string && (data.time == '' || data.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'))
+        && data.description is string && data.description.size() <= 1000
+        && data.done is bool
+        && data.get('reminder', 'oneDay') in ['threeDays', 'oneDay', 'oneHour', 'off']
+        && (data.get('reminder', 'oneDay') != 'oneHour' || data.time != '')
+        && existsAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(data.subjectId));
+    }
+
+    // activityIds records every pending and historical reference.
+    function linkedAfter(uid, subjectId, activityId) {
+      return getAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(subjectId)).data.activityIds.get(activityId, false) == true;
+    }
+
+    function unlinkedAfter(uid, subjectId, activityId) {
+      return !getAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(subjectId)).data.activityIds.keys().hasAny([activityId]);
+    }
+
+    function validLinkChange(uid, subjectId) {
+      let data = request.resource.data;
+      let activityId = data.lastActivityId;
+      let path = /databases/$(database)/documents/users/$(uid)/activities/$(activityId);
+      let before = exists(path) && get(path).data.subjectId == subjectId;
+      let after = existsAfter(path) && getAfter(path).data.subjectId == subjectId;
+      return activityId.matches('^[A-Za-z0-9]{20}$')
+        && data.diff(resource.data).affectedKeys().hasOnly(['activityIds', 'lastActivityId'])
+        && data.activityIds.diff(resource.data.activityIds).affectedKeys().hasOnly([activityId])
+        && before != after
+        && (before
+          ? resource.data.activityIds.get(activityId, false) == true && !data.activityIds.keys().hasAny([activityId])
+          : !resource.data.activityIds.keys().hasAny([activityId]) && data.activityIds.get(activityId, false) == true);
+    }
+
+    match /users/{uid}/activities/{activityId} {
+      allow read: if owns(uid);
+      allow delete: if owns(uid) && unlinkedAfter(uid, resource.data.subjectId, activityId);
+      allow create: if owns(uid) && validActivity(uid) && request.resource.data.done == false
+        && linkedAfter(uid, request.resource.data.subjectId, activityId);
+      allow update: if owns(uid) && validActivity(uid)
+        && (resource.data.subjectId == request.resource.data.subjectId || (linkedAfter(uid, request.resource.data.subjectId, activityId) && unlinkedAfter(uid, resource.data.subjectId, activityId)));
+    }
+
+    match /users/{uid}/subjects/{subjectId} {
+      allow read: if owns(uid);
+      allow delete: if owns(uid) && resource.data.activityIds.size() == 0 && !existsAfter(/databases/$(database)/documents/users/$(uid)/subjectNames/$(resource.data.nameKey));
+      allow create: if owns(uid) && validSubject(uid, subjectId)
+        && request.resource.data.activityIds.size() == 0 && request.resource.data.lastActivityId == '';
+      allow update: if owns(uid) && validSubject(uid, subjectId)
+        && (validLinkChange(uid, subjectId) || (request.resource.data.activityIds == resource.data.activityIds && request.resource.data.lastActivityId == resource.data.lastActivityId))
+        && (resource.data.nameKey == request.resource.data.nameKey
+          || !existsAfter(/databases/$(database)/documents/users/$(uid)/subjectNames/$(resource.data.nameKey)));
+    }
+
+    match /users/{uid}/subjectNames/{nameKey} {
+      allow get: if owns(uid);
+      allow create: if owns(uid) && validName(uid, nameKey);
+      allow delete: if owns(uid)
+        && (!existsAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(resource.data.subjectId))
+          || getAfter(/databases/$(database)/documents/users/$(uid)/subjects/$(resource.data.subjectId)).data.nameKey != nameKey);
+    }
+  }
+}
